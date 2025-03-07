@@ -28,7 +28,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   const handleExportToExcel = () => {
     const exportData = transactions.map(t => ({
       ...t,
-      dataDoInput: format(new Date(t.dataDoInput), 'dd/MM/yyyy')
+      dataDoInput: format(new Date(t.dataDoInput), 'dd-MM-yyyy')
     }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -80,9 +80,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             if (typeof row.dataDoInput === 'number') {
               // Handle Excel date number format
               parsedDate = new Date((row.dataDoInput - 25569) * 86400 * 1000);
-            } else {
-              // Handle date string format
-              parsedDate = parse(row.dataDoInput, 'dd/MM/yyyy', new Date());
+            } else if (typeof row.dataDoInput === 'string') {
+              // Try different date formats
+              const formats = ['dd-MM-yyyy', 'dd/MM/yyyy'];
+              for (const dateFormat of formats) {
+                parsedDate = parse(row.dataDoInput, dateFormat, new Date());
+                if (isValid(parsedDate)) break;
+              }
             }
             
             if (!isValid(parsedDate)) {
@@ -90,13 +94,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
               return;
             }
             
+            const formattedDate = format(parsedDate, 'dd-MM-yyyy');
             onAddTransaction({
               idLogista: Number(row.idLogista) || 1,
               nomeLogista: row.nomeLogista || 'Loja Principal',
               nomeGrupo1: row.nomeGrupo1 as Transaction['nomeGrupo1'],
               nomeGrupo2: row.nomeGrupo2 as Transaction['nomeGrupo2'],
               nomeGrupo3: row.nomeGrupo3,
-              dataDoInput: format(parsedDate, 'yyyy-MM-dd'),
+              dataDoInput: formattedDate,
               valorDoInput: Number(row.valorDoInput) || 0
             });
           } catch (error) {
@@ -127,8 +132,25 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   };
 
   const sortedTransactions = [...transactions].sort((a, b) => 
-    new Date(b.dataDoInput).getTime() - new Date(a.dataDoInput).getTime()
+    new Date(parse(b.dataDoInput, 'dd-MM-yyyy', new Date())).getTime() - 
+    new Date(parse(a.dataDoInput, 'dd-MM-yyyy', new Date())).getTime()
   );
+
+  const handleAddNewTransaction = () => {
+    const now = new Date();
+    const formattedDate = format(now, 'dd-MM-yyyy');
+    
+    const newTransaction = {
+      idLogista: 1,
+      nomeLogista: 'Loja Principal',
+      nomeGrupo1: 'Receita' as const,
+      nomeGrupo2: 'Vendas de Produtos' as const,
+      nomeGrupo3: '',
+      dataDoInput: formattedDate,
+      valorDoInput: 0
+    };
+    onAddTransaction(newTransaction);
+  };
 
   return (
     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
@@ -176,17 +198,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             />
           </label>
           <button
-            onClick={() => {
-              const newTransaction = {
-                idLogista: 1,
-                nomeLogista: 'Loja Principal',
-                nomeGrupo1: 'Receita' as const,
-                nomeGrupo2: 'Vendas de Produtos' as const,
-                dataDoInput: format(new Date(), 'yyyy-MM-dd'),
-                valorDoInput: 0
-              };
-              onAddTransaction(newTransaction);
-            }}
+            onClick={handleAddNewTransaction}
             className="flex items-center gap-1 bg-purple-600 text-white px-3 py-1.5 rounded text-sm hover:bg-purple-700"
           >
             <Plus size={16} />
@@ -271,7 +283,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                       <input
                         type="date"
                         value={editForm?.dataDoInput}
-                        onChange={(e) => setEditForm(prev => prev ? {...prev, dataDoInput: e.target.value} : null)}
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          const formattedDate = format(date, 'dd-MM-yyyy');
+                          setEditForm(prev => prev ? {...prev, dataDoInput: formattedDate} : null);
+                        }}
                         className={`border rounded px-2 py-1 w-full ${
                           isDarkMode 
                             ? 'bg-gray-700 border-gray-600 text-white' 
@@ -372,7 +388,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 ) : (
                   <>
                     <td className={`px-6 py-4 whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                      {format(new Date(transaction.dataDoInput), 'dd/MM/yyyy')}
+                      {transaction.dataDoInput}
                     </td>
                     <td className={`px-6 py-4 whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                       {transaction.nomeLogista}
