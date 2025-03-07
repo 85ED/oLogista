@@ -25,10 +25,20 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   const [editForm, setEditForm] = useState<Transaction | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
+  const formatDateForDisplay = (dateStr: string) => {
+    const date = parse(dateStr, 'dd-MM-yyyy', new Date());
+    return format(date, 'dd/MM/yyyy');
+  };
+
   const handleExportToExcel = () => {
-    const exportData = transactions.map(t => ({
+    const sortedData = [...transactions].sort((a, b) => 
+      new Date(parse(b.dataDoInput, 'dd-MM-yyyy', new Date())).getTime() - 
+      new Date(parse(a.dataDoInput, 'dd-MM-yyyy', new Date())).getTime()
+    );
+    
+    const exportData = sortedData.map(t => ({
       ...t,
-      dataDoInput: format(new Date(t.dataDoInput), 'dd-MM-yyyy')
+      dataDoInput: formatDateForDisplay(t.dataDoInput)
     }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -74,15 +84,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        jsonData.forEach((row: any) => {
+        // Process all rows first and sort them
+        const newTransactions = jsonData.map((row: any) => {
           try {
             let parsedDate;
             if (typeof row.dataDoInput === 'number') {
-              // Handle Excel date number format
               parsedDate = new Date((row.dataDoInput - 25569) * 86400 * 1000);
             } else if (typeof row.dataDoInput === 'string') {
-              // Try different date formats
-              const formats = ['dd-MM-yyyy', 'dd/MM/yyyy'];
+              const formats = ['dd/MM/yyyy', 'dd-MM-yyyy'];
               for (const dateFormat of formats) {
                 parsedDate = parse(row.dataDoInput, dateFormat, new Date());
                 if (isValid(parsedDate)) break;
@@ -91,26 +100,54 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             
             if (!isValid(parsedDate)) {
               console.error('Invalid date format:', row.dataDoInput);
-              return;
+              return null;
             }
             
-            const formattedDate = format(parsedDate, 'dd-MM-yyyy');
-            onAddTransaction({
+            return {
               idLogista: Number(row.idLogista) || 1,
               nomeLogista: row.nomeLogista || 'Loja Principal',
               nomeGrupo1: row.nomeGrupo1 as Transaction['nomeGrupo1'],
               nomeGrupo2: row.nomeGrupo2 as Transaction['nomeGrupo2'],
               nomeGrupo3: row.nomeGrupo3,
-              dataDoInput: formattedDate,
+              dataDoInput: format(parsedDate, 'dd-MM-yyyy'),
               valorDoInput: Number(row.valorDoInput) || 0
-            });
+            };
           } catch (error) {
             console.error('Error processing row:', row, error);
+            return null;
           }
+        }).filter((t): t is Omit<Transaction, 'id'> => t !== null);
+
+        // Sort transactions by date (newest first) before adding
+        newTransactions.sort((a, b) => {
+          const dateA = parse(a.dataDoInput, 'dd-MM-yyyy', new Date());
+          const dateB = parse(b.dataDoInput, 'dd-MM-yyyy', new Date());
+          return dateB.getTime() - dateA.getTime();
+        });
+
+        // Add transactions in sorted order
+        newTransactions.forEach(transaction => {
+          onAddTransaction(transaction);
         });
       };
       reader.readAsArrayBuffer(file);
     }
+  };
+
+  const handleAddNewTransaction = () => {
+    const now = new Date();
+    const formattedDate = format(now, 'dd-MM-yyyy');
+    
+    const newTransaction = {
+      idLogista: 1,
+      nomeLogista: 'Loja Principal',
+      nomeGrupo1: 'Receita' as const,
+      nomeGrupo2: 'Vendas de Produtos' as const,
+      nomeGrupo3: '',
+      dataDoInput: formattedDate,
+      valorDoInput: 0
+    };
+    onAddTransaction(newTransaction);
   };
 
   const startEditing = (transaction: Transaction) => {
@@ -131,26 +168,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     }
   };
 
-  const sortedTransactions = [...transactions].sort((a, b) => 
-    new Date(parse(b.dataDoInput, 'dd-MM-yyyy', new Date())).getTime() - 
-    new Date(parse(a.dataDoInput, 'dd-MM-yyyy', new Date())).getTime()
-  );
-
-  const handleAddNewTransaction = () => {
-    const now = new Date();
-    const formattedDate = format(now, 'dd-MM-yyyy');
-    
-    const newTransaction = {
-      idLogista: 1,
-      nomeLogista: 'Loja Principal',
-      nomeGrupo1: 'Receita' as const,
-      nomeGrupo2: 'Vendas de Produtos' as const,
-      nomeGrupo3: '',
-      dataDoInput: formattedDate,
-      valorDoInput: 0
-    };
-    onAddTransaction(newTransaction);
-  };
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const dateA = parse(a.dataDoInput, 'dd-MM-yyyy', new Date());
+    const dateB = parse(b.dataDoInput, 'dd-MM-yyyy', new Date());
+    return dateB.getTime() - dateA.getTime();
+  });
 
   return (
     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
@@ -388,7 +410,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 ) : (
                   <>
                     <td className={`px-6 py-4 whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                      {transaction.dataDoInput}
+                      {formatDateForDisplay(transaction.dataDoInput)}
                     </td>
                     <td className={`px-6 py-4 whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
                       {transaction.nomeLogista}
