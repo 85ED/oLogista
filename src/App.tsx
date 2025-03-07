@@ -16,7 +16,7 @@ function App() {
       nomeGrupo1: 'Receita',
       nomeGrupo2: 'Vendas de Produtos',
       nomeGrupo3: 'Venda Marketplace',
-      dataDoInput: '2024-03-10',
+      dataDoInput: '07-03-2025',
       valorDoInput: 5000
     },
     {
@@ -26,7 +26,7 @@ function App() {
       nomeGrupo1: 'Despesa',
       nomeGrupo2: 'Custos Diretos',
       nomeGrupo3: 'Compra de Estoque',
-      dataDoInput: '2024-03-11',
+      dataDoInput: '07-03-2025',
       valorDoInput: 500
     },
     {
@@ -36,7 +36,7 @@ function App() {
       nomeGrupo1: 'Despesa',
       nomeGrupo2: 'Despesas Operacionais',
       nomeGrupo3: 'Conta de Energia',
-      dataDoInput: '2024-03-12',
+      dataDoInput: '07-03-2025',
       valorDoInput: 200
     }
   ]);
@@ -57,10 +57,10 @@ function App() {
   };
 
   const handleAddTransaction = (newTransaction: Omit<Transaction, 'id'>) => {
-    setTransactions(prev => [...prev, {
+    setTransactions(prev => [{
       ...newTransaction,
       id: Math.random().toString(36).substr(2, 9)
-    }]);
+    }, ...prev]);
   };
 
   const handleUpdateTransaction = (updatedTransaction: Transaction) => {

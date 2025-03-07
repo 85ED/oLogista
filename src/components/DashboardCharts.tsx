@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Transaction } from '../types';
-import { format, subDays, subMonths, subYears, isWithinInterval, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parse, subDays, subMonths, subYears, isWithinInterval, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 type DateRange = '1W' | '1M' | '1Y' | 'ALL';
 
@@ -36,6 +36,10 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
   const [revenueRange, setRevenueRange] = useState<DateRange>('1M');
   const [netIncomeRange, setNetIncomeRange] = useState<DateRange>('1M');
 
+  const parseTransactionDate = (dateStr: string) => {
+    return parse(dateStr, 'dd-MM-yyyy', new Date());
+  };
+
   const getDateRange = (range: DateRange) => {
     const now = new Date();
     switch (range) {
@@ -55,7 +59,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
     if (!dateRange) return transactions;
 
     return transactions.filter(t => {
-      const transactionDate = startOfDay(new Date(t.dataDoInput));
+      const transactionDate = startOfDay(parseTransactionDate(t.dataDoInput));
       return isWithinInterval(transactionDate, dateRange);
     });
   };
@@ -66,7 +70,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
     const end = endOfMonth(now);
 
     return transactions.filter(t => {
-      const transactionDate = startOfDay(new Date(t.dataDoInput));
+      const transactionDate = startOfDay(parseTransactionDate(t.dataDoInput));
       return isWithinInterval(transactionDate, { start, end });
     });
   };
@@ -76,7 +80,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
     const expensesByDay = filteredTransactions
       .filter(t => t.nomeGrupo1 === 'Despesa')
       .reduce((acc: any, curr) => {
-        const date = format(new Date(curr.dataDoInput), 'dd/MM');
+        const date = format(parseTransactionDate(curr.dataDoInput), 'dd/MM');
         acc[date] = (acc[date] || 0) + curr.valorDoInput;
         return acc;
       }, {});
@@ -96,7 +100,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
     const revenueByDay = filteredTransactions
       .filter(t => t.nomeGrupo1 === 'Receita')
       .reduce((acc: any, curr) => {
-        const date = format(new Date(curr.dataDoInput), 'dd/MM');
+        const date = format(parseTransactionDate(curr.dataDoInput), 'dd/MM');
         acc[date] = (acc[date] || 0) + curr.valorDoInput;
         return acc;
       }, {});
@@ -114,7 +118,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
   const processDataForNetIncome = (range: DateRange) => {
     const filteredTransactions = filterTransactionsByRange(transactions, range);
     const netIncomeByDay = filteredTransactions.reduce((acc: any, curr) => {
-      const date = format(new Date(curr.dataDoInput), 'dd/MM');
+      const date = format(parseTransactionDate(curr.dataDoInput), 'dd/MM');
       const value = curr.nomeGrupo1 === 'Receita' ? curr.valorDoInput : -curr.valorDoInput;
       acc[date] = (acc[date] || 0) + value;
       return acc;
