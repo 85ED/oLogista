@@ -4,7 +4,7 @@ import { DashboardCharts } from './components/DashboardCharts';
 import { Transaction } from './types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Eye, EyeOff } from 'lucide-react';
 import { ParticleButton } from './components/ui/particle-button';
 
 function App() {
@@ -43,6 +43,7 @@ function App() {
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showNumbers, setShowNumbers] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -78,6 +79,10 @@ function App() {
     document.documentElement.classList.toggle('dark');
   };
 
+  const toggleNumberVisibility = () => {
+    setShowNumbers(!showNumbers);
+  };
+
   const lastUpdate = getLastUpdateDate();
   const currentYear = new Date().getFullYear();
 
@@ -104,6 +109,17 @@ function App() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={toggleNumberVisibility}
+                className={`p-2 rounded-full ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+                title={showNumbers ? 'Ocultar números' : 'Mostrar números'}
+              >
+                {showNumbers ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
               <div className="flex flex-col items-end">
                 <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {format(currentTime, 'MMMM, EEEE', { locale: ptBR })}
@@ -124,7 +140,7 @@ function App() {
               </button>
             </div>
           </div>
-          <DashboardCharts transactions={transactions} isDarkMode={isDarkMode} />
+          <DashboardCharts transactions={transactions} isDarkMode={isDarkMode} showNumbers={showNumbers} />
           <div className="mt-8">
             <TransactionTable 
               transactions={transactions}
@@ -132,6 +148,7 @@ function App() {
               onUpdateTransaction={handleUpdateTransaction}
               onDeleteTransaction={handleDeleteTransaction}
               isDarkMode={isDarkMode}
+              showNumbers={showNumbers}
             />
           </div>
           <footer className={`mt-12 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>

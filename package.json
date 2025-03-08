@@ -1,7 +1,7 @@
 {
   "name": "oLojista",
   "version": "1.0.0",
-  "homepage": "https://85ED.github.io/oLojista",
+  "homepage": "https://85ED.github.io/oLojista.git",
   "private": true,
   "type": "module",
   "scripts": {

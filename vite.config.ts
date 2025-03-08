@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/o-lojista/',
+  base: '/oLojista/',
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

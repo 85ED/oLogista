@@ -12,6 +12,7 @@ interface TransactionTableProps {
   onUpdateTransaction: (transaction: Transaction) => void;
   onDeleteTransaction: (id: string) => void;
   isDarkMode: boolean;
+  showNumbers: boolean;
 }
 
 export const TransactionTable: React.FC<TransactionTableProps> = ({
@@ -19,7 +20,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   onAddTransaction,
   onUpdateTransaction,
   onDeleteTransaction,
-  isDarkMode
+  isDarkMode,
+  showNumbers
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Transaction | null>(null);
@@ -38,7 +40,8 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     
     const exportData = sortedData.map(t => ({
       ...t,
-      dataDoInput: formatDateForDisplay(t.dataDoInput)
+      dataDoInput: formatDateForDisplay(t.dataDoInput),
+      valorDoInput: showNumbers ? t.valorDoInput : '***'
     }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -84,7 +87,6 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
         
-        // Process all rows first and sort them
         const newTransactions = jsonData.map((row: any) => {
           try {
             let parsedDate;
@@ -118,14 +120,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           }
         }).filter((t): t is Omit<Transaction, 'id'> => t !== null);
 
-        // Sort transactions by date (newest first) before adding
         newTransactions.sort((a, b) => {
           const dateA = parse(a.dataDoInput, 'dd-MM-yyyy', new Date());
           const dateB = parse(b.dataDoInput, 'dd-MM-yyyy', new Date());
           return dateB.getTime() - dateA.getTime();
         });
 
-        // Add transactions in sorted order
         newTransactions.forEach(transaction => {
           onAddTransaction(transaction);
         });
@@ -173,6 +173,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     const dateB = parse(b.dataDoInput, 'dd-MM-yyyy', new Date());
     return dateB.getTime() - dateA.getTime();
   });
+
+  const formatValue = (value: number) => {
+    if (!showNumbers) return '***';
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
 
   return (
     <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
@@ -433,7 +438,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     <td className={`px-6 py-4 whitespace-nowrap text-right ${
                       transaction.nomeGrupo1 === 'Receita' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.valorDoInput.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {formatValue(transaction.valorDoInput)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button

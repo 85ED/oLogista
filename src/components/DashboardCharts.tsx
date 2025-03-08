@@ -8,6 +8,7 @@ type DateRange = '1W' | '1M' | '1Y' | 'ALL';
 interface DashboardChartsProps {
   transactions: Transaction[];
   isDarkMode: boolean;
+  showNumbers: boolean;
 }
 
 const COLORS = {
@@ -31,7 +32,7 @@ const COLORS = {
   'Equipamentos e Manutenção': '#4B5563'
 };
 
-export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, isDarkMode }) => {
+export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, isDarkMode, showNumbers }) => {
   const [expensesRange, setExpensesRange] = useState<DateRange>('1M');
   const [revenueRange, setRevenueRange] = useState<DateRange>('1M');
   const [netIncomeRange, setNetIncomeRange] = useState<DateRange>('1M');
@@ -198,6 +199,8 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
   }));
 
   const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    if (!showNumbers) return null;
+    
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -224,11 +227,13 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
       return (
         <div className={`p-2 rounded shadow-lg ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
           <p className="font-semibold">{data.name}</p>
-          <p>
-            {data.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            {' '}
-            ({((data.value / total) * 100).toFixed(1)}%)
-          </p>
+          {showNumbers && (
+            <p>
+              {data.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {' '}
+              ({((data.value / total) * 100).toFixed(1)}%)
+            </p>
+          )}
         </div>
       );
     }
@@ -253,6 +258,11 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
     );
   };
 
+  const formatValue = (value: number) => {
+    if (!showNumbers) return '***';
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -262,20 +272,21 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
           </h3>
           <RangeSelector value={expensesRange} onChange={setExpensesRange} />
           <div className="text-2xl font-bold text-red-600 mb-4">
-            {totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {formatValue(totalExpenses)}
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={processDataForExpenses(expensesRange)}>
                 <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
                 <XAxis dataKey="date" stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} />
-                <YAxis stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} />
+                <YAxis stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} tickFormatter={showNumbers ? undefined : () => '***'} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
                     borderColor: isDarkMode ? '#374151' : '#E5E7EB',
                     color: isDarkMode ? '#FFFFFF' : '#000000'
                   }}
+                  formatter={(value: any) => showNumbers ? value : '***'}
                 />
                 <Bar dataKey="value" fill="#FF0000" />
               </BarChart>
@@ -289,20 +300,21 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
           </h3>
           <RangeSelector value={revenueRange} onChange={setRevenueRange} />
           <div className="text-2xl font-bold text-blue-600 mb-4">
-            {totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {formatValue(totalRevenue)}
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={processDataForRevenue(revenueRange)}>
                 <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
                 <XAxis dataKey="date" stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} />
-                <YAxis stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} />
+                <YAxis stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} tickFormatter={showNumbers ? undefined : () => '***'} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
                     borderColor: isDarkMode ? '#374151' : '#E5E7EB',
                     color: isDarkMode ? '#FFFFFF' : '#000000'
                   }}
+                  formatter={(value: any) => showNumbers ? value : '***'}
                 />
                 <Bar dataKey="value" fill="#0000FF" />
               </BarChart>
@@ -316,20 +328,21 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
           </h3>
           <RangeSelector value={netIncomeRange} onChange={setNetIncomeRange} />
           <div className={`text-2xl font-bold mb-4 ${netIncome >= 0 ? (isDarkMode ? 'text-green-400' : 'text-green-600') : 'text-red-600'}`}>
-            {netIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {formatValue(netIncome)}
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={processDataForNetIncome(netIncomeRange)}>
                 <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
                 <XAxis dataKey="date" stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} />
-                <YAxis stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} />
+                <YAxis stroke={isDarkMode ? '#9CA3AF' : '#4B5563'} tickFormatter={showNumbers ? undefined : () => '***'} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
                     borderColor: isDarkMode ? '#374151' : '#E5E7EB',
                     color: isDarkMode ? '#FFFFFF' : '#000000'
                   }}
+                  formatter={(value: any) => showNumbers ? value : '***'}
                 />
                 <Bar 
                   dataKey="value" 
@@ -351,7 +364,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ transactions, 
               ? (isDarkMode ? 'text-green-400' : 'text-green-600') 
               : 'text-red-600'
           }`}>
-            {currentMonthNetIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {formatValue(currentMonthNetIncome)}
           </div>
         </div>
 
