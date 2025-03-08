@@ -1,15 +1,14 @@
 {
-  "name": "oLojista",
-  "version": "1.0.0",
   "homepage": "https://85ED.github.io/oLojista.git",
+  "name": "oLojista",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
